@@ -1,71 +1,139 @@
 "use client";
 
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import SectionEditor from "../SectionEditor";
-import { LessonSection } from "@/types/admin";
-import { cleanFirestoreData } from "@/lib/cleanFirestore";
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export default function NewLessonPage() {
+type Category = {
+  id: string;
+  slug: string;
+  title: string;
+};
+
+type SectionType = "headline" | "text" | "code" | "image";
+
+type Section = {
+  type: SectionType;
+  value: string;
+  language?: string;
+};
+
+export default function AdminNewLessonPage() {
   const router = useRouter();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
-  const [sections, setSections] = useState<LessonSection[]>([]);
-  const [published, setPublished] = useState(false);
+  const [hashtags, setHashtags] = useState("");
+  const [sections, setSections] = useState<Section[]>([]);
+  const [saving, setSaving] = useState(false);
 
-  const save = async () => {
-    if (!title || sections.length === 0) return;
+  useEffect(() => {
+    async function loadCats() {
+      const snap = await getDocs(collection(db, "learn_categories"));
+      setCategories(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() } as Category))
+      );
+    }
+    loadCats();
+  }, []);
 
-    await addDoc(
-  collection(db, "learn_lessons"),
-  cleanFirestoreData({
-    title,
-    published: published ?? false,
-     order: 0,
-    sections: sections.map((s) =>
-      cleanFirestoreData({
-        id: s.id,
-        type: s.type,
-        content: s.content,
-        // 🔥 Firestore-safe
-        language: s.type === "code" ? s.language ?? "javascript" : null,
-      })
-    ),
-    createdAt: Date.now(),
-  })
-);
+  function addSection(type: SectionType) {
+    setSections([
+      ...sections,
+      type === "code"
+        ? { type, value: "", language: "js" }
+        : { type, value: "" },
+    ]);
+  }
 
-    router.push("/admin/learn");
-  };
+  async function saveLesson() {
+    if (!title || !category) {
+      alert("Title and category required");
+      return;
+    }
+
+    const content = sections.map((s) => {
+      if (s.type === "headline") {
+        return { type: "text", value: `## ${s.value}` };
+      }
+      if (s.type === "code") {
+        return {
+          type: "code",
+          value: s.value,
+          language: s.language || "js",
+        };
+      }
+      return { type: s.type, value: s.value };
+    });
+
+    setSaving(true);
+
+    await addDoc(collection(db, "learn_lessons"), {
+      title,
+      category, // ✅ slug only
+      hashtags: hashtags.split(",").map((h) => h.trim()).filter(Boolean),
+      order: 0,
+      published: false,
+      content,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    router.replace("/admin/learn");
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">New Lesson</h1>
+    <div className="max-w-4xl space-y-6">
+      <h1 className="text-2xl font-bold">Create Lesson</h1>
 
       <input
-        className="admin-input w-full mb-6"
+        className="input"
         placeholder="Lesson title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
 
-      <SectionEditor sections={sections} setSections={setSections} />
+      <select
+        className="input"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+      >
+        <option value="">Select category</option>
+        {categories.map((c) => (
+          <option key={c.slug} value={c.slug}>
+            {c.title}
+          </option>
+        ))}
+      </select>
 
-      <div className="flex items-center gap-4 mt-6">
-        <label>
-          <input
-            type="checkbox"
-            checked={published}
-            onChange={(e) => setPublished(e.target.checked)}
-          />{" "}
-          Published
-        </label>
+      <input
+        className="input"
+        placeholder="hashtags (comma separated)"
+        value={hashtags}
+        onChange={(e) => setHashtags(e.target.value)}
+      />
 
-        <button onClick={save} className="admin-btn">
-          Save Lesson
-        </button>
+      <div className="flex gap-2">
+        <button onClick={() => addSection("headline")}>+ Headline</button>
+        <button onClick={() => addSection("text")}>+ Text</button>
+        <button onClick={() => addSection("code")}>+ Code</button>
+        <button onClick={() => addSection("image")}>+ Image</button>
       </div>
+
+      <button
+        onClick={saveLesson}
+        disabled={saving}
+        className="bg-emerald-500 px-6 py-3 rounded text-black"
+      >
+        {saving ? "Saving…" : "Save Lesson"}
+      </button>
     </div>
   );
 }

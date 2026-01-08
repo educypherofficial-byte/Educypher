@@ -20,13 +20,11 @@ export async function getCategories(): Promise<LearnCategory[]> {
   );
 }
 
-export async function getLessonsByCategory(
-  category: string
-): Promise<Lesson[]> {
+export async function getLessons(): Promise<Lesson[]> {
   const snap = await getDocs(
     query(
       collection(db, "learn_lessons"),
-      where("category", "==", category),
+      where("published", "==", true),
       orderBy("order")
     )
   );
@@ -41,6 +39,7 @@ export async function getLesson(id: string): Promise<Lesson | null> {
   const snap = await getDoc(ref);
 
   if (!snap.exists()) return null;
+  if (snap.data().published !== true) return null;
 
   return { id: snap.id, ...snap.data() } as Lesson;
 }

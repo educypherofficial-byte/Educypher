@@ -14,7 +14,9 @@ export type LessonBlock =
 export type Lesson = {
   id: string;
   title: string;
-  category: string;
+  category: string; // category slug
   order: number;
+  hashtags: string[];
+  published: boolean;
   content: LessonBlock[];
 };

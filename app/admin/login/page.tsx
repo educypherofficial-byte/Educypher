@@ -15,7 +15,7 @@ export default function AdminLoginPage() {
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/admin/dashboard");
+      router.replace("/admin");
     } catch {
       setError("Invalid credentials");
     }
