@@ -7,22 +7,56 @@ import { Search } from "lucide-react";
 
 import { getCategories, getLessons } from "@/lib/learn";
 import { LearnCategory, Lesson } from "@/types/learn";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function LearnPage() {
+  const router = useRouter();
+
   const [categories, setCategories] = useState<LearnCategory[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
+  // 🔐 Auth guard
   useEffect(() => {
-    async function load() {
-      setCategories(await getCategories());
-      setLessons(await getLessons());
-      setLoading(false);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login");
+      } else {
+        setAuthLoading(false);
+      }
+    });
+
+    return () => unsub();
+  }, [router]);
+
+  // ⏳ Load data only after auth is verified
+  useEffect(() => {
+    if (!authLoading) {
+      async function load() {
+        setCategories(await getCategories());
+        setLessons(await getLessons());
+        setLoading(false);
+      }
+      load();
     }
-    load();
-  }, []);
+  }, [authLoading]);
+
+  // ⏳ Block UI while checking auth
+  if (authLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center text-gray-400">
+          Checking access…
+        </div>
+      </>
+    );
+  }
 
   if (loading) {
     return (

@@ -1,22 +1,80 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { getPracticeLabs } from "@/lib/practice";
 import { Lock, Code2 } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 export const metadata = {
   title: "Practice Coding | EduCypher",
   description: "Practice coding problems by topic and difficulty.",
 };
 
-export default async function PracticePage() {
-  const labs = await getPracticeLabs();
+export default function PracticePage() {
+  const router = useRouter();
+
+  const [labs, setLabs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // 🔐 Auth guard
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login");
+      } else {
+        setAuthLoading(false);
+      }
+    });
+
+    return () => unsub();
+  }, [router]);
+
+  // 📦 Load data only after auth
+  useEffect(() => {
+    if (!authLoading) {
+      async function load() {
+        const labs = await getPracticeLabs();
+        setLabs(labs);
+        setLoading(false);
+      }
+      load();
+    }
+  }, [authLoading]);
+
+  // ⏳ Wait for auth
+  if (authLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center text-gray-400">
+          Checking access…
+        </div>
+      </>
+    );
+  }
+
+  // ⏳ Wait for data
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center text-gray-400">
+          Loading labs…
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <Navbar />
 
       <main className="relative min-h-screen text-white overflow-hidden">
-
         {/* ===== MATCHED BACKGROUND ===== */}
         <div className="absolute inset-0 -z-10 bg-neutral-950" />
 
@@ -39,13 +97,7 @@ export default async function PracticePage() {
           </header>
 
           {/* COMING SOON CALLOUT */}
-          <div
-            className="
-              rounded-2xl border border-emerald-500/30
-              bg-emerald-500/10
-              px-6 py-5
-            "
-          >
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-6 py-5">
             <h2 className="font-semibold text-emerald-400 mb-1">
               🚧 Practice Labs Coming Soon
             </h2>
@@ -57,32 +109,17 @@ export default async function PracticePage() {
 
           {/* LAB LIST */}
           <div className="space-y-4">
-
             {labs.map((lab) => (
               <div
                 key={lab.id}
-                className="
-                  group relative
-                  rounded-xl border border-neutral-800
-                  bg-neutral-900/60 backdrop-blur
-                  px-5 py-4
-                  opacity-70 cursor-not-allowed
-                "
+                className="group relative rounded-xl border border-neutral-800 bg-neutral-900/60 backdrop-blur px-5 py-4 opacity-70 cursor-not-allowed"
               >
-                {/* LOCK ICON */}
                 <div className="absolute right-4 top-4 text-gray-500">
                   <Lock size={16} />
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div
-                    className="
-                      h-10 w-10 rounded-lg
-                      bg-neutral-800
-                      flex items-center justify-center
-                      text-gray-400
-                    "
-                  >
+                  <div className="h-10 w-10 rounded-lg bg-neutral-800 flex items-center justify-center text-gray-400">
                     <Code2 size={18} />
                   </div>
 
@@ -94,13 +131,7 @@ export default async function PracticePage() {
                       {lab.topic} • {lab.difficulty}
                     </p>
 
-                    <span
-                      className="
-                        inline-block mt-2
-                        text-xs px-2 py-0.5 rounded-full
-                        bg-neutral-800 text-gray-400
-                      "
-                    >
+                    <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-gray-400">
                       Coming soon
                     </span>
                   </div>
@@ -108,14 +139,17 @@ export default async function PracticePage() {
               </div>
             ))}
 
-            {/* EMPTY STATE (if no labs yet) */}
             {labs.length === 0 && (
               <div className="text-center py-20 text-gray-400">
                 <p className="text-lg font-medium mb-2">
                   Practice labs are on the way 🚀
                 </p>
                 <p className="text-sm">
-                  Start with <Link href="/learn" className="text-emerald-400 hover:underline">learning</Link> while we finish labs.
+                  Start with{" "}
+                  <Link href="/learn" className="text-emerald-400 hover:underline">
+                    learning
+                  </Link>{" "}
+                  while we finish labs.
                 </p>
               </div>
             )}

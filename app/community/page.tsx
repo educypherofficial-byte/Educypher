@@ -4,23 +4,56 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { ArrowRight } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function CommunityListPage() {
+  const router = useRouter();
+
   const [communities, setCommunities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
+  // 🔐 Auth Guard
   useEffect(() => {
-    async function load() {
-      const snap = await getDocs(collection(db, "communities"));
-      setCommunities(
-        snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      );
-      setLoading(false);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login");
+      } else {
+        setAuthLoading(false);
+      }
+    });
+
+    return () => unsub();
+  }, [router]);
+
+  // 📦 Load communities only after auth
+  useEffect(() => {
+    if (!authLoading) {
+      async function load() {
+        const snap = await getDocs(collection(db, "communities"));
+        setCommunities(
+          snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        );
+        setLoading(false);
+      }
+      load();
     }
-    load();
-  }, []);
+  }, [authLoading]);
+
+  // ⏳ Wait for auth
+  if (authLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center text-gray-400">
+          Checking access…
+        </div>
+      </>
+    );
+  }
 
   if (loading) {
     return (
@@ -77,7 +110,6 @@ export default function CommunityListPage() {
                   hover:-translate-y-1
                 "
               >
-                {/* subtle hover glow */}
                 <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition" />
 
                 <div className="relative space-y-3">
@@ -97,7 +129,6 @@ export default function CommunityListPage() {
               </Link>
             ))}
 
-            {/* EMPTY STATE – silent, neutral */}
             {communities.length === 0 && (
               <div className="col-span-full text-center py-20 text-gray-500">
                 No communities available yet.
