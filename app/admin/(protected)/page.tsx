@@ -1,16 +1,21 @@
 export default function AdminDashboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
 
       {/* HEADER */}
-      <section>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Manage platform content, users, and activity
-        </p>
+      <section className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-900/70 backdrop-blur p-10">
+        <div className="absolute -top-20 -right-20 h-64 w-64 bg-emerald-500/10 blur-[120px]" />
+        <div className="relative">
+          <h1 className="text-4xl font-black tracking-tight">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-400 mt-2 max-w-xl">
+            Control everything — lessons, communities, users and platform health.
+          </p>
+        </div>
       </section>
 
-      {/* STATS (PLACEHOLDERS FOR NOW) */}
+      {/* STATS */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <StatCard
           title="Lessons"
@@ -33,7 +38,7 @@ export default function AdminDashboardPage() {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <ActionCard
           title="Manage Learn"
-          desc="Create & edit lessons"
+          desc="Create, edit & publish lessons"
           href="/admin/learn"
         />
         <ActionCard
@@ -64,10 +69,26 @@ function StatCard({
   desc: string;
 }) {
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-      <div className="text-sm text-gray-400">{title}</div>
-      <div className="text-2xl font-bold mt-2">{value}</div>
-      <div className="text-xs text-gray-500 mt-1">{desc}</div>
+    <div
+      className="
+        group relative
+        rounded-2xl
+        border border-neutral-800
+        bg-neutral-900/70 backdrop-blur
+        p-6
+        transition
+        hover:-translate-y-1
+        hover:border-emerald-500/40
+      "
+    >
+      {/* subtle glow */}
+      <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition" />
+
+      <div className="relative space-y-2">
+        <div className="text-sm text-gray-400">{title}</div>
+        <div className="text-3xl font-bold tracking-tight">{value}</div>
+        <div className="text-xs text-gray-500">{desc}</div>
+      </div>
     </div>
   );
 }
@@ -84,10 +105,32 @@ function ActionCard({
   return (
     <a
       href={href}
-      className="block bg-neutral-900 border border-neutral-800 rounded-xl p-6 hover:bg-neutral-800 transition"
+      className="
+        group relative block
+        rounded-2xl
+        border border-neutral-800
+        bg-neutral-900/70 backdrop-blur
+        p-8
+        transition
+        hover:-translate-y-1
+        hover:border-emerald-500/40
+      "
     >
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-sm text-gray-400 mt-2">{desc}</p>
+      {/* hover glow */}
+      <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition" />
+
+      <div className="relative space-y-3">
+        <h3 className="text-lg font-semibold tracking-tight">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-400 leading-relaxed">
+          {desc}
+        </p>
+
+        <div className="pt-4 text-sm text-emerald-400 group-hover:translate-x-1 transition">
+          Open →
+        </div>
+      </div>
     </a>
   );
 }

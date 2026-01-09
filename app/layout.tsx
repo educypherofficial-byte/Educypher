@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// ✅ ADD THIS
+import { UserAuthProvider } from "@/providers/UserAuthProvider";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -21,9 +24,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" className="scroll-smooth">
       <body
@@ -36,7 +39,10 @@ export default function RootLayout({
           text-white
         `}
       >
-        {children}
+        {/* ✅ AUTH PROVIDER MUST WRAP EVERYTHING */}
+        <UserAuthProvider>
+          {children}
+        </UserAuthProvider>
       </body>
     </html>
   );
