@@ -8,11 +8,7 @@ import { Lock, Code2 } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-
-export const metadata = {
-  title: "Practice Coding | EduCypher",
-  description: "Practice coding problems by topic and difficulty.",
-};
+import Head from "next/head";
 
 export default function PracticePage() {
   const router = useRouter();
@@ -72,21 +68,23 @@ export default function PracticePage() {
 
   return (
     <>
+      <Head>
+        <title>Practice Coding | EduCypher</title>
+        <meta
+          name="description"
+          content="Practice coding problems by topic and difficulty."
+        />
+      </Head>
+
       <Navbar />
 
       <main className="relative min-h-screen text-white overflow-hidden">
-        {/* ===== MATCHED BACKGROUND ===== */}
         <div className="absolute inset-0 -z-10 bg-neutral-950" />
-
         <div className="absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-emerald-500/20 blur-[160px]" />
         <div className="absolute top-1/3 -right-32 h-[480px] w-[480px] rounded-full bg-cyan-400/20 blur-[160px]" />
-
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-        {/* ===== CONTENT ===== */}
         <div className="relative max-w-5xl mx-auto px-6 py-14 space-y-10">
-
-          {/* HEADER */}
           <header className="space-y-3">
             <h1 className="text-4xl font-extrabold tracking-tight">
               Practice
@@ -96,7 +94,6 @@ export default function PracticePage() {
             </p>
           </header>
 
-          {/* COMING SOON CALLOUT */}
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-6 py-5">
             <h2 className="font-semibold text-emerald-400 mb-1">
               🚧 Practice Labs Coming Soon
@@ -107,7 +104,6 @@ export default function PracticePage() {
             </p>
           </div>
 
-          {/* LAB LIST */}
           <div className="space-y-4">
             {labs.map((lab) => (
               <div
@@ -124,9 +120,7 @@ export default function PracticePage() {
                   </div>
 
                   <div className="flex-1">
-                    <h2 className="text-lg font-medium">
-                      {lab.title}
-                    </h2>
+                    <h2 className="text-lg font-medium">{lab.title}</h2>
                     <p className="text-sm text-gray-400 mt-1">
                       {lab.topic} • {lab.difficulty}
                     </p>
