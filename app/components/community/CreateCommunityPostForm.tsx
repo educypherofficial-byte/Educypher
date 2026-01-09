@@ -40,20 +40,48 @@ export default function CreateCommunityPostForm({
   }
 
   return (
-    <div className="border border-gray-800 rounded-lg p-4 mb-6 bg-neutral-900">
+    <div
+      className="
+        rounded-2xl
+        border border-neutral-800
+        bg-neutral-900/70 backdrop-blur
+        p-5 mb-6
+        transition
+      "
+    >
+      {/* TEXTAREA */}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={4}
         placeholder="Write something for the community…"
-        className="w-full resize-none rounded-md bg-neutral-800 px-3 py-2 text-sm text-white focus:ring-1 focus:ring-emerald-500"
+        className="
+          w-full resize-none
+          rounded-xl
+          bg-neutral-800/70
+          border border-neutral-700
+          px-4 py-3
+          text-sm text-white
+          placeholder-gray-500
+          focus:outline-none
+          focus:border-emerald-500/40
+          transition
+        "
       />
 
-      <div className="flex justify-end mt-3">
+      {/* ACTIONS */}
+      <div className="flex justify-end mt-4">
         <button
           onClick={submit}
           disabled={posting}
-          className="bg-emerald-600 px-4 py-2 rounded text-sm disabled:opacity-60"
+          className="
+            px-5 py-2.5 rounded-xl
+            text-sm font-semibold
+            bg-emerald-500 text-black
+            hover:bg-emerald-400
+            transition
+            disabled:opacity-60
+          "
         >
           {posting ? "Posting…" : "Post"}
         </button>

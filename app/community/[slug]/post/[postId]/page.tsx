@@ -72,7 +72,6 @@ export default function CommunityPostPage({
       }
     );
 
-    // +5 points (SAFE)
     await setDoc(
       doc(db, "users", auth.currentUser.uid),
       { points: increment(5) },
@@ -90,17 +89,12 @@ export default function CommunityPostPage({
   async function acceptSolution(commentId: string, authorId: string) {
     if (!communityId) return;
 
-    // Mark post solved
     await setDoc(
       doc(db, "communities", communityId, "posts", postId),
-      {
-        solved: true,
-        acceptedSolutionId: commentId,
-      },
+      { solved: true, acceptedSolutionId: commentId },
       { merge: true }
     );
 
-    // Mark comment as solution
     await setDoc(
       doc(
         db,
@@ -115,7 +109,6 @@ export default function CommunityPostPage({
       { merge: true }
     );
 
-    // +20 points to solution author (SAFE)
     await setDoc(
       doc(db, "users", authorId),
       { points: increment(20) },
@@ -148,52 +141,89 @@ export default function CommunityPostPage({
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-neutral-950 text-white px-6 py-10 max-w-4xl mx-auto space-y-6">
 
-        <h1 className="text-3xl font-bold">{post.title}</h1>
-        <p className="text-gray-300">{post.content}</p>
+      <main className="relative min-h-screen text-white overflow-hidden">
+        {/* BACKGROUND */}
+        <div className="absolute inset-0 -z-10 bg-neutral-950" />
 
-        <h2 className="text-xl font-semibold mt-10">Solutions</h2>
+        <div className="relative max-w-4xl mx-auto px-6 py-12 space-y-10">
 
-        {comments.map(c => (
-          <div
-            key={c.id}
-            className={`p-4 rounded-lg border ${
-              c.isSolution
-                ? "border-emerald-500 bg-emerald-500/10"
-                : "border-neutral-800 bg-neutral-900"
-            }`}
-          >
-            <p>{c.content}</p>
+          {/* POST */}
+          <article className="space-y-6">
+            <h1 className="text-4xl font-extrabold tracking-tight">
+              {post.title}
+            </h1>
 
-            {!post.solved &&
-              post.authorId === auth.currentUser?.uid && (
-                <button
-                  onClick={() => acceptSolution(c.id, c.authorId)}
-                  className="mt-2 text-xs text-emerald-400"
-                >
-                  Mark as Solution
-                </button>
-              )}
-          </div>
-        ))}
+            <p className="text-gray-300 leading-relaxed">
+              {post.content}
+            </p>
 
-        {auth.currentUser && (
-          <div className="mt-4">
-            <textarea
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3"
-              placeholder="Write your solution…"
-              value={solutionText}
-              onChange={e => setSolutionText(e.target.value)}
-            />
-            <button
-              onClick={addSolution}
-              className="mt-2 px-4 py-2 bg-emerald-500 text-black rounded-lg"
-            >
-              Submit Solution (+5 pts)
-            </button>
-          </div>
-        )}
+            {/* 🔥 CODE BLOCK (THIS WAS MISSING) */}
+            {post.code && (
+              <div className="rounded-xl border border-neutral-800 bg-black overflow-hidden">
+                <div className="px-4 py-2 text-xs text-gray-400 border-b border-neutral-800">
+                  Code
+                </div>
+                <pre className="p-4 overflow-x-auto text-sm text-gray-200 font-mono">
+                  <code>{post.code}</code>
+                </pre>
+              </div>
+            )}
+
+            {post.solved && (
+              <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs">
+                ✔ Solved
+              </span>
+            )}
+          </article>
+
+          {/* SOLUTIONS */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold">Solutions</h2>
+
+            {comments.map(c => (
+              <div
+                key={c.id}
+                className={`rounded-xl border p-5 ${
+                  c.isSolution
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-neutral-800 bg-neutral-900"
+                }`}
+              >
+                <p className="text-sm">{c.content}</p>
+
+                {!post.solved &&
+                  post.authorId === auth.currentUser?.uid && (
+                    <button
+                      onClick={() => acceptSolution(c.id, c.authorId)}
+                      className="mt-3 text-xs text-emerald-400 hover:underline"
+                    >
+                      Mark as accepted solution
+                    </button>
+                  )}
+              </div>
+            ))}
+          </section>
+
+          {/* ADD SOLUTION */}
+          {auth.currentUser && (
+            <section className="space-y-3">
+              <textarea
+                className="w-full rounded-xl bg-neutral-900 border border-neutral-800 p-4 text-sm min-h-[120px]"
+                placeholder="Write your solution…"
+                value={solutionText}
+                onChange={e => setSolutionText(e.target.value)}
+              />
+
+              <button
+                onClick={addSolution}
+                className="px-5 py-2.5 rounded-xl font-semibold bg-emerald-500 text-black hover:bg-emerald-400"
+              >
+                Submit Solution (+5 pts)
+              </button>
+            </section>
+          )}
+        </div>
       </main>
     </>
   );

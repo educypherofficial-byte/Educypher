@@ -6,13 +6,31 @@ export default function CommunityPost({
   post: CommunityPost;
 }) {
   return (
-    <div className="border border-gray-800 rounded-lg p-4">
-      <p className="text-sm text-gray-400">{post.authorName}</p>
+    <div
+      className="
+        rounded-2xl
+        border border-neutral-800
+        bg-neutral-900/60 backdrop-blur
+        p-5
+        transition
+        hover:border-emerald-500/40
+      "
+    >
+      {/* AUTHOR */}
+      <p className="text-xs text-gray-500">
+        {post.authorName}
+      </p>
 
-      <p className="mt-2">{post.content}</p>
+      {/* CONTENT */}
+      <p className="mt-3 text-sm text-gray-200 leading-relaxed">
+        {post.content}
+      </p>
 
-      <div className="mt-3 text-xs text-gray-500">
-        {post.likeCount} likes · {post.commentCount} comments
+      {/* META */}
+      <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+        <span>{post.likeCount} likes</span>
+        <span>•</span>
+        <span>{post.commentCount} comments</span>
       </div>
     </div>
   );

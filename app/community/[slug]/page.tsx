@@ -10,6 +10,7 @@ import {
   where,
   addDoc,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -62,13 +63,13 @@ export default function CommunityPage({
   async function createPost() {
     if (!user || !community || !title) return;
 
-    await addDoc(
+    const ref = await addDoc(
       collection(db, "communities", community.id, "posts"),
       {
         title,
         content,
         postType,
-        tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+        tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         code: code || null,
         errorMessage: postType === "error" ? errorMessage : null,
         solved: false,
@@ -78,7 +79,8 @@ export default function CommunityPage({
       }
     );
 
-    // reset form
+    await updateDoc(ref, { postId: ref.id });
+
     setTitle("");
     setContent("");
     setCode("");
@@ -86,11 +88,10 @@ export default function CommunityPage({
     setErrorMessage("");
     setShowForm(false);
 
-    // reload posts
     const snap = await getDocs(
       collection(db, "communities", community.id, "posts")
     );
-    setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    setPosts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   }
 
   if (!community) {
@@ -108,20 +109,36 @@ export default function CommunityPage({
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-neutral-950 text-white px-6 py-10">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="relative min-h-screen text-white overflow-hidden">
+
+        {/* ===== MATCHED BACKGROUND ===== */}
+        <div className="absolute inset-0 -z-10 bg-neutral-950" />
+        <div className="absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-emerald-500/20 blur-[160px]" />
+        <div className="absolute top-1/3 -right-32 h-[480px] w-[480px] rounded-full bg-cyan-400/20 blur-[160px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+
+        {/* ===== CONTENT ===== */}
+        <div className="relative max-w-7xl mx-auto px-6 py-12 space-y-10">
 
           {/* HEADER */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold">{community.title}</h1>
-              <p className="text-gray-400">{community.description}</p>
+              <h1 className="text-4xl font-extrabold tracking-tight">
+                {community.title}
+              </h1>
+              <p className="text-gray-400 mt-2 max-w-2xl">
+                {community.description}
+              </p>
             </div>
 
             {user && (
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="px-4 py-2 bg-emerald-500 text-black rounded-lg"
+                className="
+                  px-5 py-2.5 rounded-xl font-semibold
+                  bg-emerald-500 text-black
+                  hover:bg-emerald-400 transition
+                "
               >
                 {showForm ? "Cancel" : "Create Post"}
               </button>
@@ -130,12 +147,13 @@ export default function CommunityPage({
 
           {/* CREATE POST */}
           {showForm && (
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/70 backdrop-blur p-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+                {/* LEFT */}
                 <div className="lg:col-span-2 space-y-4">
                   <select
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-3"
+                    className="w-full rounded-lg bg-neutral-800 border border-neutral-700 p-3"
                     value={postType}
                     onChange={(e) => setPostType(e.target.value)}
                   >
@@ -146,21 +164,21 @@ export default function CommunityPage({
                   </select>
 
                   <input
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-3"
+                    className="w-full rounded-lg bg-neutral-800 border border-neutral-700 p-3"
                     placeholder="Post title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
 
                   <textarea
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-3 min-h-[120px]"
-                    placeholder="Explain the issue or idea"
+                    className="w-full rounded-lg bg-neutral-800 border border-neutral-700 p-3 min-h-[120px]"
+                    placeholder="Explain your question or idea"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                   />
 
                   <textarea
-                    className="w-full bg-black border border-neutral-700 rounded-lg p-3 min-h-[160px] font-mono text-sm"
+                    className="w-full rounded-lg bg-black border border-neutral-700 p-3 min-h-[160px] font-mono text-sm"
                     placeholder="Code (optional)"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
@@ -168,7 +186,7 @@ export default function CommunityPage({
 
                   {postType === "error" && (
                     <textarea
-                      className="w-full bg-neutral-800 border border-red-500/30 rounded-lg p-3 min-h-[80px]"
+                      className="w-full rounded-lg bg-neutral-800 border border-red-500/30 p-3 min-h-[80px]"
                       placeholder="Error message"
                       value={errorMessage}
                       onChange={(e) => setErrorMessage(e.target.value)}
@@ -176,22 +194,30 @@ export default function CommunityPage({
                   )}
                 </div>
 
+                {/* RIGHT */}
                 <div className="space-y-4">
                   <input
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-3"
-                    placeholder="Tags (react, python, firebase)"
+                    className="w-full rounded-lg bg-neutral-800 border border-neutral-700 p-3"
+                    placeholder="Tags (react, firebase, css)"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                   />
 
                   <button
                     onClick={createPost}
-                    className="w-full bg-emerald-500 text-black font-semibold py-3 rounded-lg"
+                    className="
+                      w-full py-3 rounded-xl
+                      bg-emerald-500 text-black font-semibold
+                      hover:bg-emerald-400 transition
+                    "
                   >
                     Publish Post
                   </button>
-                </div>
 
+                  <p className="text-xs text-gray-400">
+                    Clear posts get better answers.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -202,21 +228,31 @@ export default function CommunityPage({
               <Link
                 key={p.id}
                 href={`/community/${slug}/post/${p.id}`}
-                className="block bg-neutral-900 border border-neutral-800 rounded-xl p-5 hover:border-emerald-500/40 transition"
+                className="
+                  block rounded-2xl
+                  border border-neutral-800
+                  bg-neutral-900/60 backdrop-blur
+                  p-6
+                  transition
+                  hover:border-emerald-500/40
+                "
               >
-                <div className="flex gap-2 text-xs mb-2">
-                  <span className="px-2 py-1 bg-neutral-800 rounded">
+                <div className="flex items-center gap-2 text-xs mb-3">
+                  <span className="px-2 py-1 rounded bg-neutral-800">
                     {p.postType}
                   </span>
                   {p.solved && (
-                    <span className="px-2 py-1 bg-emerald-500 text-black rounded">
+                    <span className="px-2 py-1 rounded bg-emerald-500 text-black">
                       SOLVED
                     </span>
                   )}
                 </div>
 
-                <h3 className="font-semibold">{p.title}</h3>
-                <p className="text-sm text-gray-400 mt-1">
+                <h3 className="font-semibold text-lg">
+                  {p.title}
+                </h3>
+
+                <p className="text-sm text-gray-400 mt-2 line-clamp-2">
                   {p.content}
                 </p>
               </Link>

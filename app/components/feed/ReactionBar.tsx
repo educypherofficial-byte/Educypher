@@ -33,10 +33,57 @@ export default function ReactionBar({
   }
 
   return (
-    <div className="flex gap-4 text-sm text-gray-400">
-      <button onClick={() => react("like")}>👍 {reactions.like}</button>
-      <button onClick={() => react("fire")}>🔥 {reactions.fire}</button>
-      <button onClick={() => react("laugh")}>😂 {reactions.laugh}</button>
+    <div className="flex items-center gap-3">
+      <ReactionButton
+        label="👍"
+        count={reactions.like}
+        onClick={() => react("like")}
+      />
+      <ReactionButton
+        label="🔥"
+        count={reactions.fire}
+        onClick={() => react("fire")}
+      />
+      <ReactionButton
+        label="😂"
+        count={reactions.laugh}
+        onClick={() => react("laugh")}
+      />
     </div>
+  );
+}
+
+/* ---------- UI-ONLY SUB COMPONENT ---------- */
+
+function ReactionButton({
+  label,
+  count,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="
+        flex items-center gap-2
+        px-3 py-1.5
+        rounded-full
+        border border-neutral-800
+        bg-neutral-900/60 backdrop-blur
+        text-sm text-gray-300
+        hover:border-neutral-700
+        hover:bg-neutral-900
+        active:scale-95
+        transition
+      "
+    >
+      <span className="text-base">{label}</span>
+      <span className="text-xs font-medium text-gray-400">
+        {count}
+      </span>
+    </button>
   );
 }

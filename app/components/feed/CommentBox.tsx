@@ -29,27 +29,68 @@ export default function CommentBox({ feedId }: { feedId: string }) {
   }
 
   return (
-    <div className="space-y-4">
-      {comments.map((c) => (
-        <div key={c.id} className="bg-neutral-900 p-3 rounded-lg">
-          <p className="text-sm text-gray-100">{c.text}</p>
-          <p className="text-xs text-gray-500">
-            {c.userName} • {timeAgo(c.createdAt)}
-          </p>
-        </div>
-      ))}
+    <div className="space-y-6">
 
+      {/* COMMENTS */}
+      <div className="space-y-4">
+        {comments.map((c) => (
+          <div
+            key={c.id}
+            className="
+              rounded-xl border border-neutral-800
+              bg-neutral-900/60 backdrop-blur
+              p-4 space-y-2
+            "
+          >
+            <p className="text-sm text-gray-100 leading-relaxed">
+              {c.text}
+            </p>
+
+            <div className="text-xs text-gray-500">
+              <span className="text-gray-300 font-medium">
+                {c.userName}
+              </span>{" "}
+              • {timeAgo(c.createdAt)}
+            </div>
+          </div>
+        ))}
+
+        {comments.length === 0 && (
+          <p className="text-sm text-gray-500">
+            No comments yet. Be the first to reply.
+          </p>
+        )}
+      </div>
+
+      {/* INPUT */}
       {user && (
-        <div className="flex gap-2">
+        <div
+          className="
+            flex items-center gap-3
+            rounded-2xl border border-neutral-800
+            bg-neutral-900/70 backdrop-blur
+            px-4 py-3
+          "
+        >
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Write a comment..."
-            className="flex-1 bg-neutral-800 rounded-full px-4 py-2"
+            placeholder="Write a comment…"
+            className="
+              flex-1 bg-transparent
+              outline-none text-sm
+              placeholder-gray-500
+            "
           />
+
           <button
             onClick={submit}
-            className="bg-emerald-600 px-4 rounded-full"
+            className="
+              px-4 py-1.5 rounded-full
+              bg-emerald-500 text-black
+              text-sm font-semibold
+              hover:bg-emerald-400 transition
+            "
           >
             Post
           </button>
