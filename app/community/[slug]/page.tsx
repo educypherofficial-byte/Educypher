@@ -59,43 +59,39 @@ export default function CommunityPage({
     load();
   }, [slug]);
 
- async function createPost() {
-  if (!user || !community || !title) return;
+  async function createPost() {
+    if (!user || !community || !title) return;
 
-  const ref = await addDoc(
-    collection(db, "communities", community.id, "posts"),
-    {
-      title,
-      content,
-      postType,
-      tags: tags.split(",").map(t => t.trim()).filter(Boolean),
-      code: code || null,
-      errorMessage: postType === "error" ? errorMessage : null,
-      solved: false,
-      authorId: user.uid,
-      communityId: community.id,
-      createdAt: serverTimestamp(),
-    }
-  );
+    await addDoc(
+      collection(db, "communities", community.id, "posts"),
+      {
+        title,
+        content,
+        postType,
+        tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+        code: code || null,
+        errorMessage: postType === "error" ? errorMessage : null,
+        solved: false,
+        authorId: user.uid,
+        communityId: community.id,
+        createdAt: serverTimestamp(),
+      }
+    );
 
-  // 🔥 CRITICAL: store postId
-  await updateDoc(ref, {
-    postId: ref.id,
-  });
+    // reset form
+    setTitle("");
+    setContent("");
+    setCode("");
+    setTags("");
+    setErrorMessage("");
+    setShowForm(false);
 
-  setTitle("");
-  setContent("");
-  setCode("");
-  setTags("");
-  setErrorMessage("");
-  setShowForm(false);
-
-  const snap = await getDocs(
-    collection(db, "communities", community.id, "posts")
-  );
-  setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-}
-
+    // reload posts
+    const snap = await getDocs(
+      collection(db, "communities", community.id, "posts")
+    );
+    setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }
 
   if (!community) {
     return (
@@ -137,7 +133,6 @@ export default function CommunityPage({
             <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* LEFT – MAIN CONTENT */}
                 <div className="lg:col-span-2 space-y-4">
                   <select
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-3"
@@ -181,7 +176,6 @@ export default function CommunityPage({
                   )}
                 </div>
 
-                {/* RIGHT – META */}
                 <div className="space-y-4">
                   <input
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-3"
@@ -196,10 +190,6 @@ export default function CommunityPage({
                   >
                     Publish Post
                   </button>
-
-                  <p className="text-xs text-gray-400">
-                    Be specific. Good posts get faster help 🚀
-                  </p>
                 </div>
 
               </div>

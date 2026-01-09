@@ -1,12 +1,26 @@
-import { getHighlighter } from "shiki";
+import { createHighlighter } from "shiki";
 
-let highlighter: any;
+let highlighter: any = null;
 
-export async function highlight(code: string, lang = "ts") {
+export async function highlightCode(
+  code: string,
+  lang: string = "ts"
+): Promise<string> {
   if (!highlighter) {
-    highlighter = await getHighlighter({
+    highlighter = await createHighlighter({
       themes: ["github-dark"],
-      langs: ["ts", "js", "tsx", "json", "python", "java", "cpp"],
+      langs: [
+        "ts",
+        "js",
+        "tsx",
+        "jsx",
+        "json",
+        "python",
+        "java",
+        "cpp",
+        "c",
+        "bash",
+      ],
     });
   }
 
