@@ -16,12 +16,13 @@ type Category = {
   title: string;
 };
 
-type SectionType = "headline" | "text" | "code" | "image";
+type SectionType = "headline" | "text" | "code" | "image" | "question";
 
 type Section = {
   type: SectionType;
   value: string;
   language?: string;
+  answer?: string;
 };
 
 export default function AdminNewLessonPage() {
@@ -55,6 +56,8 @@ export default function AdminNewLessonPage() {
       ...prev,
       type === "code"
         ? { type, value: "", language: "js" }
+        : type === "question"
+        ? { type, value: "", answer: "" }
         : { type, value: "" },
     ]);
   }
@@ -62,6 +65,12 @@ export default function AdminNewLessonPage() {
   function updateSection(index: number, value: string) {
     setSections((prev) =>
       prev.map((s, i) => (i === index ? { ...s, value } : s))
+    );
+  }
+
+  function updateAnswer(index: number, value: string) {
+    setSections((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, answer: value } : s))
     );
   }
 
@@ -85,8 +94,9 @@ export default function AdminNewLessonPage() {
 
       setSections(
         data.content.map((s: any) => ({
-          type: s.type,
-          value: s.value,
+          type: s.type === "question" ? "question" : s.type,
+          value: s.question || s.value || "",
+          answer: s.answer || "",
           language: s.language || "js",
         }))
       );
@@ -116,6 +126,13 @@ export default function AdminNewLessonPage() {
             type: "code",
             value: s.value,
             language: s.language || "js",
+          };
+        }
+        if (s.type === "question") {
+          return {
+            type: "question",
+            question: s.value,
+            answer: s.answer || "",
           };
         }
         return { type: s.type, value: s.value };
@@ -150,7 +167,7 @@ export default function AdminNewLessonPage() {
 
       {error && <div className="text-red-400">{error}</div>}
 
-      {/* 🔥 JSON IMPORT */}
+      {/* JSON IMPORT */}
       <div className="space-y-2">
         <label className="text-xs text-gray-400">
           Paste Lesson JSON (optional)
@@ -159,12 +176,11 @@ export default function AdminNewLessonPage() {
           rows={6}
           value={jsonInput}
           onChange={(e) => setJsonInput(e.target.value)}
-          placeholder="Paste lesson JSON here..."
           className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 font-mono text-sm"
         />
         <button
           onClick={importFromJSON}
-          className="px-4 py-2 bg-cyan-500/20 text-cyan-300 rounded-lg text-sm hover:bg-cyan-500/30"
+          className="px-4 py-2 bg-cyan-500/20 text-cyan-300 rounded-lg text-sm"
         >
           Import from JSON
         </button>
@@ -176,17 +192,6 @@ export default function AdminNewLessonPage() {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-
-      <div className="flex justify-between items-center">
-        <label className="text-sm text-gray-400">Category</label>
-        <button
-          type="button"
-          onClick={() => router.push("/admin/learn/categories/new")}
-          className="text-xs text-emerald-400 hover:underline"
-        >
-          + New Category
-        </button>
-      </div>
 
       <select
         className="bg-neutral-900 border border-neutral-800 rounded-lg p-3"
@@ -203,7 +208,7 @@ export default function AdminNewLessonPage() {
 
       <input
         className="bg-neutral-900 border border-neutral-800 rounded-lg p-3"
-        placeholder="hashtags (comma separated)"
+        placeholder="hashtags"
         value={hashtags}
         onChange={(e) => setHashtags(e.target.value)}
       />
@@ -219,7 +224,7 @@ export default function AdminNewLessonPage() {
               <span>{s.type.toUpperCase()}</span>
               <button
                 onClick={() => removeSection(i)}
-                className="text-red-400 hover:text-red-300"
+                className="text-red-400"
               >
                 Remove
               </button>
@@ -228,15 +233,20 @@ export default function AdminNewLessonPage() {
             <textarea
               className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3"
               placeholder={
-                s.type === "image"
-                  ? "Image URL"
-                  : s.type === "code"
-                  ? "Code"
-                  : "Content"
+                s.type === "question" ? "Question" : "Content"
               }
               value={s.value}
               onChange={(e) => updateSection(i, e.target.value)}
             />
+
+            {s.type === "question" && (
+              <textarea
+                className="w-full bg-neutral-950 border border-emerald-500/40 rounded-lg p-3"
+                placeholder="Correct answer"
+                value={s.answer || ""}
+                onChange={(e) => updateAnswer(i, e.target.value)}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -249,13 +259,14 @@ export default function AdminNewLessonPage() {
         {saving ? "Saving…" : "Save Lesson"}
       </button>
 
-      {/* 🔥 STICKY ADD BAR */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-neutral-800 bg-neutral-900/80 backdrop-blur z-40">
+      {/* ADD BAR */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-neutral-800 bg-neutral-900/80">
         <div className="max-w-4xl mx-auto px-6 py-3 flex gap-2 flex-wrap">
           <button onClick={() => addSection("headline")} className="px-4 py-2 bg-neutral-800 rounded-lg">+ Headline</button>
           <button onClick={() => addSection("text")} className="px-4 py-2 bg-neutral-800 rounded-lg">+ Text</button>
           <button onClick={() => addSection("code")} className="px-4 py-2 bg-neutral-800 rounded-lg">+ Code</button>
           <button onClick={() => addSection("image")} className="px-4 py-2 bg-neutral-800 rounded-lg">+ Image</button>
+          <button onClick={() => addSection("question")} className="px-4 py-2 bg-emerald-500 text-black rounded-lg">+ Question</button>
         </div>
       </div>
     </div>

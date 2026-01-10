@@ -44,7 +44,7 @@ export default function LessonPage({
   useEffect(() => {
     getLesson(lessonId).then((data) => {
       if (!data) return;
-      const text = data.content.map((b: any) => b.value).join(" ");
+      const text = data.content.map((b: any) => b.value || "").join(" ");
       setReadingTime(getReadingTime(text));
       setLesson({
         ...data,
@@ -54,32 +54,31 @@ export default function LessonPage({
   }, [lessonId]);
 
   useEffect(() => {
-  function onScroll() {
+    function onScroll() {
+      const el = contentRef.current;
+      if (!el) return;
+
+      const total = el.scrollHeight - el.clientHeight;
+      const scrolled = el.scrollTop;
+      setProgress(Math.min(100, (scrolled / total) * 100));
+
+      const sections = el.querySelectorAll("h2[data-section]");
+      let current: string | null = null;
+
+      sections.forEach((s) => {
+        const top = (s as HTMLElement).offsetTop - el.scrollTop;
+        if (top < 200) current = s.getAttribute("data-section");
+      });
+
+      setActive(current);
+    }
+
     const el = contentRef.current;
     if (!el) return;
 
-    const total = el.scrollHeight - el.clientHeight;
-    const scrolled = el.scrollTop;
-    setProgress(Math.min(100, (scrolled / total) * 100));
-
-    const sections = el.querySelectorAll("h2[data-section]");
-    let current: string | null = null;
-
-    sections.forEach((s) => {
-      const top = (s as HTMLElement).offsetTop - el.scrollTop;
-      if (top < 200) current = s.getAttribute("data-section");
-    });
-
-    setActive(current);
-  }
-
-  const el = contentRef.current;
-  if (!el) return;
-
-  el.addEventListener("scroll", onScroll);
-  return () => el.removeEventListener("scroll", onScroll);
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
   }, []);
-
 
   async function markComplete() {
     if (!auth.currentUser || !lesson) return;
@@ -98,8 +97,15 @@ export default function LessonPage({
   if (!lesson) return null;
 
   const headings = lesson.content
-    .filter((b) => b.type === "text" && b.value.startsWith("## "))
-    .map((b) => b.value.replace("## ", ""));
+  .filter((b: any) => b.type === "text" && b.value?.startsWith("## "))
+  .map((b: any) => {
+    const title = b.value.replace("## ", "");
+    return {
+      id: title.toLowerCase().replace(/\s+/g, "-"),
+      title
+    };
+  });
+
 
   return (
     <>
@@ -111,35 +117,34 @@ export default function LessonPage({
       />
 
       <main className="h-[calc(100vh-64px)] grid grid-cols-[280px_1fr_320px] bg-gradient-to-br from-neutral-950 via-neutral-900/40 to-neutral-950 text-white">
-
-        {/* LEFT NAV */}
+        {/* LEFT */}
         <aside className="border-r border-neutral-800 px-4 py-6 overflow-y-auto bg-neutral-950/80 backdrop-blur">
           <p className="text-xs text-gray-500 mb-4">IN THIS LESSON</p>
           {headings.map((h) => (
-            <button
-              key={h}
-              onClick={() => document.getElementById(h)?.scrollIntoView()}
-              className={`block w-full text-left pl-4 pr-3 py-2 mb-1 text-sm transition ${
-                active === h
-                  ? "text-emerald-400 border-l-2 border-emerald-400 bg-emerald-500/10"
-                  : "text-gray-500 hover:text-white"
-              }`}
-            >
-              {h}
-            </button>
-          ))}
+          <button
+            key={h.id}
+            onClick={() => document.getElementById(h.id)?.scrollIntoView()}
+            className={`block w-full text-left pl-4 pr-3 py-2 mb-1 text-sm transition ${
+              active === h.id
+                ? "text-emerald-400 border-l-2 border-emerald-400 bg-emerald-500/10"
+                : "text-gray-500 hover:text-white"
+            }`}
+          >
+            {h.title}
+          </button>
+        ))}
+
         </aside>
 
         {/* CENTER */}
         <section ref={contentRef} className="overflow-y-auto py-12 bg-neutral-900/20">
           <div className="max-w-5xl ml-12 mr-12 bg-neutral-900/70 backdrop-blur-md ring-1 ring-white/5 rounded-2xl px-14 py-16 space-y-16 shadow-[0_40px_120px_-40px_rgba(0,0,0,.8)]">
-
             <div className="text-center space-y-2">
               <h1 className="text-4xl font-black">{lesson.title}</h1>
               <p className="text-gray-400">⏱ {readingTime} min read</p>
             </div>
 
-            {lesson.content.map((block, i) => (
+            {lesson.content.map((block: any, i: number) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 30 }}
@@ -150,21 +155,16 @@ export default function LessonPage({
                 <BlockRenderer block={block} />
               </motion.div>
             ))}
-
           </div>
         </section>
 
-        {/* RIGHT PANEL */}
+        {/* RIGHT */}
         <aside className="border-l border-neutral-800 p-6 bg-neutral-950/80 backdrop-blur hidden xl:block">
           <div className="sticky top-6 space-y-6">
-
             <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-4">
               <p className="text-sm text-gray-400">Lesson progress</p>
               <p className="text-2xl font-bold text-emerald-400">
                 {Math.round(progress)}%
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                ⏱ {Math.max(1, Math.ceil((100 - progress) / 50))} min left
               </p>
             </div>
 
@@ -179,41 +179,36 @@ export default function LessonPage({
             >
               {completed ? "Lesson Completed" : "Complete Lesson"}
             </button>
-
           </div>
         </aside>
-
       </main>
     </>
   );
 }
 
+/* ------------------ BLOCK RENDERER ------------------ */
+
 function BlockRenderer({ block }: any) {
+  // 🔥 QUESTION SUPPORT
+  if (block.type === "question") {
+    const q = block.question || block.value?.split("|")[0];
+    const a = block.answer || block.value?.split("|")[1];
+
+    if (q && a) {
+      return <QuestionBlock question={q} answer={a} />;
+    }
+  }
+
   if (block.type === "text") {
     if (block.value.startsWith("## ")) {
       const id = block.value.replace("## ", "");
       return (
-        <h2
-          id={id}
-          data-section={id}
-          className="text-3xl font-black pt-20 mb-6 flex items-center gap-3"
-        >
-          <span className="h-2 w-2 bg-emerald-400 rounded-full" />
+        <h2 id={id} data-section={id} className="text-3xl font-black pt-20 mb-6">
           {id}
         </h2>
       );
     }
-
-    // detect prompt box
-    if (block.value.trim().startsWith('"') && block.value.includes("diagram")) {
-      return <PromptBox text={block.value} />;
-    }
-
-    return (
-      <p className="text-gray-300 text-lg leading-[1.8]">
-        {block.value}
-      </p>
-    );
+    return <p className="text-gray-300 text-lg leading-[1.8]">{block.value}</p>;
   }
 
   if (block.type === "image") {
@@ -227,70 +222,54 @@ function BlockRenderer({ block }: any) {
   return null;
 }
 
-function PromptBox({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
+/* ------------------ QUESTION BLOCK ------------------ */
 
-  const cleaned = text
-    .split("\n")
-    .map((l) => l.replace(/^"|"$/g, ""))
-    .join("\n");
+function QuestionBlock({ question, answer }: { question: string; answer: string }) {
+  const [input, setInput] = useState("");
+  const [checked, setChecked] = useState(false);
 
-  function copy() {
-    navigator.clipboard.writeText(cleaned);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
+  const correct = input.trim().toLowerCase() === answer.trim().toLowerCase();
 
   return (
-    <div className="relative my-10 bg-[#0d1117] border border-neutral-700 rounded-xl p-6 font-mono text-sm text-blue-300 shadow-lg">
+    <div className="my-10 p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4">
+      <p className="text-emerald-400 font-semibold">{question}</p>
+
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-4 py-2"
+        placeholder="Type your answer"
+      />
+
       <button
-        onClick={copy}
-        className="absolute top-3 right-3 px-3 py-1 rounded-md bg-neutral-800 text-xs text-gray-300 hover:bg-neutral-700 transition"
+        onClick={() => setChecked(true)}
+        className="bg-emerald-500 text-black px-4 py-2 rounded-lg"
       >
-        {copied ? "Copied!" : "Copy"}
+        Check
       </button>
 
-      <pre className="whitespace-pre-wrap leading-relaxed">
-        {cleaned}
-      </pre>
+      {checked && (
+        <p className={correct ? "text-emerald-400" : "text-red-400"}>
+          {correct ? "Correct 🎉" : `Wrong ❌ Correct: ${answer}`}
+        </p>
+      )}
     </div>
   );
 }
 
+/* ------------------ CODE BLOCK ------------------ */
+
 function CodeBlock({ code, language }: { code: string; language?: string }) {
   const [html, setHtml] = useState("");
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     highlightCode(code, language).then(setHtml);
   }, [code, language]);
 
-  function copy() {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
   return (
-    <div className="relative my-10 border border-neutral-700 rounded-xl overflow-hidden bg-[#0d1117] shadow-xl">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-neutral-900 border-b border-neutral-800 text-xs text-gray-400">
-        <span>{language || "code"}</span>
-        <button
-          onClick={copy}
-          className="px-3 py-1 rounded-md bg-neutral-800 hover:bg-neutral-700 text-gray-300 transition"
-        >
-          {copied ? "Copied!" : "Copy"}
-        </button>
-      </div>
-
-      {/* Code */}
-      <div
-        className="overflow-x-auto"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    </div>
+    <div
+      className="my-10 rounded-xl overflow-hidden bg-[#0d1117]"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
-
